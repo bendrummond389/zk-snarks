@@ -8,7 +8,6 @@ pub mod r1cs;
 #[derive(Serialize, Deserialize, Debug)]
 pub enum Operation {
     Add,
-    Subtract,
     Multiply,
 }
 

@@ -54,13 +54,19 @@ impl R1CS {
         let operand1 = &circuit.operands[0];
         let operand2 = &circuit.operands[1];
 
-        
+        match &circuit.operation {
+            Operation::Add => {
+                match (operand1, operand2) {
+                    (Operand::Number())
+                }
+            }
+            Operation::Multiply => {}
+        }
     }
 
     pub fn process_circuit(&mut self, circuit: &Circuit) {
         match &circuit.operation {
             Operation::Add => {}
-            Operation::Subtract => {}
             Operation::Multiply => {}
         }
     }
