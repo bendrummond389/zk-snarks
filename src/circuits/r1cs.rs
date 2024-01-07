@@ -17,6 +17,7 @@ pub struct R1CS {
     b_matrix: Vec<Vec<i32>>,
     c_matrix: Vec<Vec<i32>>,
     pub variable_indices: HashMap<String, usize>,
+    pub current_index: usize,
 }
 
 impl R1CS {
@@ -26,6 +27,7 @@ impl R1CS {
             b_matrix: Vec::new(),
             c_matrix: Vec::new(),
             variable_indices: HashMap::new(),
+            current_index: 0,
         }
     }
 
@@ -39,7 +41,7 @@ impl R1CS {
         match self.variable_indices.get(name) {
             Some(&index) => index,
             None => {
-                let new_index = self.variable_indices.len();
+                let new_index = self.current_index;
                 self.variable_indices.insert(name.to_string(), new_index);
                 new_index
             }
@@ -54,13 +56,18 @@ impl R1CS {
         let operand1 = &circuit.operands[0];
         let operand2 = &circuit.operands[1];
 
-        match &circuit.operation {
-            Operation::Add => {
-                match (operand1, operand2) {
-                    (Operand::Number())
-                }
+        match (operand1, operand2) {
+            (Operand::Number(num1), Operand::Number(num2)) => {
+                println!("Multiplying {} and {}", num1, num2)
             }
-            Operation::Multiply => {}
+            (Operand::Number(num1), Operand::Variable(num2))
+            | (Operand::Variable(num2), Operand::Number(num1)) => {}
+            (Operand::NestedCircuit(circuit), Operand::Number(num))
+            | (Operand::Number(num), Operand::NestedCircuit(circuit)) => {}
+            (Operand::NestedCircuit(circuit), Operand::Variable(var))
+            | (Operand::Variable(var), Operand::NestedCircuit(circuit)) => {}
+            (Operand::Variable(var1), Operand::Variable(var2)) => {}
+            (Operand::NestedCircuit(circuit1), Operand::NestedCircuit(circuit2)) => {}
         }
     }
 

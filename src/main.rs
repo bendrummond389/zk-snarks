@@ -36,7 +36,7 @@ fn main() {
         Ok(circuit) => {
             let mut r1cs = R1CS::new();
             r1cs.determine_circuit_size(&circuit);
-            let length = r1cs.variable_indices.len();
+            let length = r1cs.current_index;
 
             println!("Length: {}", length)
         }
