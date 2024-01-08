@@ -1,0 +1,47 @@
+add hashes, maybe merkel tree?
+
+
+pub fn determine_circuit_size(&mut self, circuit: &Circuit) {
+  if circuit.operands.len() != 2 {
+      panic!("Expected two operands for binary operation");
+  }
+  let operand1 = &circuit.operands[0];
+  let operand2 = &circuit.operands[1];
+
+  match (operand1, operand2) {
+      // Number-Number Case
+      (Operand::Number(num1), Operand::Number(num2)) => {
+          println!("Multiplying {} and {}", num1, num2);
+      }
+
+      // Number-Variable and Variable-Number Cases
+      (Operand::Number(num), Operand::Variable(var))
+      | (Operand::Variable(var), Operand::Number(num)) => {
+          println!("Multiplying {} and {}", var, num)
+      }
+
+      // Nested Circuit-Number and Number-Nested Circuit Cases
+      (Operand::NestedCircuit(circuit), Operand::Number(num))
+      | (Operand::Number(num), Operand::NestedCircuit(circuit)) => {
+          println!("Multiplying {:?} and {}", circuit, num)
+      }
+
+      // Nested Circuit-Variable and Variable-Nested Circuit Cases
+      (Operand::NestedCircuit(circuit), Operand::Variable(var))
+      | (Operand::Variable(var), Operand::NestedCircuit(circuit)) => {
+          println!("Multiplying {:?} and {}", circuit, var)
+      }
+
+      // Variable-Variable Case
+      (Operand::Variable(var1), Operand::Variable(var2)) => {
+          println!("Multiplying {} and {}", var1, var2);
+      }
+
+      // Nested Circuit-Nested Circuit Case
+      (Operand::NestedCircuit(circuit1), Operand::NestedCircuit(circuit2)) => {
+          println!("Multiplying {:?} and {:?}", circuit1, circuit2);
+          self.determine_circuit_size(&circuit1);
+          self.determine_circuit_size(&circuit2);
+      }
+  }
+}

@@ -6,6 +6,7 @@ pub mod parser;
 pub mod r1cs;
 
 #[derive(Serialize, Deserialize, Debug)]
+#[derive(Hash)]
 pub enum Operation {
     Add,
     Multiply,
