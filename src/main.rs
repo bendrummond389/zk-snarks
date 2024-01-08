@@ -6,8 +6,10 @@ mod circuits;
 use circuits::parser::parse_computation;
 use circuits::r1cs::R1CS;
 use circuits::{Circuit, Operand, Operation};
+use std::env;
 
 fn main() {
+    env::set_var("RUST_BACKTRACE", "1");
     let json = r#"{
         "operation": "Multiply",
         "operands": [
@@ -38,15 +40,22 @@ fn main() {
     }"#;
 
     match circuits::parser::parse_computation(json) {
-        Ok(circuit) => {
+        Ok(mut circuit) => {
             let mut r1cs = R1CS::new();
 
-            r1cs.traverse_and_index_circuit(&circuit, 0);
+            r1cs.traverse_and_index_circuit(&mut circuit, 0);
             r1cs.combine_variable_vectors();
+            r1cs.generate_r1cs_constraints(&circuit, 0);
             let vars = r1cs.combined_var_vector;
-            println!("{:?}", vars)
+            let a = r1cs.a_matrix;
+            let b = r1cs.b_matrix;
+            let c = r1cs.c_matrix;
+            println!("{:?}", vars);
+
+            println!("A: {:?}", a);
+            println!("B: {:?}", b);
+            println!("C: {:?}", c);
         }
         Err(e) => println!("Failed to parse computation: {}", e),
     }
-
 }

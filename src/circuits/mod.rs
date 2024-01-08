@@ -5,8 +5,7 @@ mod engine;
 pub mod parser;
 pub mod r1cs;
 
-#[derive(Serialize, Deserialize, Debug)]
-#[derive(Hash)]
+#[derive(Serialize, Deserialize, Debug, Hash)]
 pub enum Operation {
     Add,
     Multiply,
@@ -14,14 +13,15 @@ pub enum Operation {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Circuit {
-    pub operation: Operation, // remove pub after testing
+    pub operation: Operation,
     pub operands: Vec<Operand>,
+    pub hash: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Operand {
     Number(i32),
-    Variable(String),  
+    Variable(String),
     NestedCircuit(Box<Circuit>),
 }
