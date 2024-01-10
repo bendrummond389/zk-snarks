@@ -120,21 +120,23 @@ impl R1CS {
 
     pub fn combine_variable_vectors(
         &mut self,
-        static_variables: &mut Vec<String>,
-        linearization_variables: &mut Vec<String>,
+        static_variables: &[String],
+        linearization_variables: &[String],
     ) {
-        let mut combined_vars = static_variables.clone();
-        combined_vars.extend(linearization_variables.clone());
-        self.variable_vector = combined_vars.clone();
+        self.variable_vector.clear();
 
-        let index_map: HashMap<String, usize> = combined_vars
-            .into_iter()
+        self.variable_vector.extend_from_slice(static_variables);
+        self.variable_vector
+            .extend_from_slice(linearization_variables);
+
+        self.variable_indices = self
+            .variable_vector
+            .iter()
             .enumerate()
-            .map(|(index, var)| (var, index))
+            .map(|(index, var)| (var.clone(), index))
             .collect();
-
-        self.variable_indices = index_map
     }
+
     pub fn traverse_and_index_circuit(
         &mut self,
         circuit: &mut Circuit,
