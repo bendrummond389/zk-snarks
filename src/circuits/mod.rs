@@ -1,7 +1,6 @@
 #[allow(dead_code)]
 use serde::{Deserialize, Serialize};
 
-mod engine;
 pub mod parser;
 pub mod r1cs;
 

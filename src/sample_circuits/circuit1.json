@@ -1,0 +1,28 @@
+{
+  "operation": "Multiply",
+  "operands": [
+      {
+          "operation": "Add",
+          "operands": [
+              {
+                  "operation": "Multiply",
+                  "operands": ["x", "x"]
+              },
+              {
+                  "operation": "Add",
+                  "operands": ["x", 2]
+              }
+          ]
+      },
+      {
+          "operation": "Multiply",
+          "operands": [
+              {
+                  "operation": "Add",
+                  "operands": ["x", 3]
+              },
+              4
+          ]
+      }
+  ]
+}
