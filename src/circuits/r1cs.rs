@@ -21,23 +21,21 @@ pub struct R1CS {
     a_matrix: Vec<Vec<f64>>,
     b_matrix: Vec<Vec<f64>>,
     c_matrix: Vec<Vec<f64>>,
-    witness_vector: Vec<String>,
-    witness_indices: HashMap<String, usize>,
+    pub variable_vector: Vec<String>,
+    pub variable_indices: HashMap<String, usize>,
+    circuit: Circuit,
 }
 
 impl R1CS {
-    fn new() -> Self {
-        R1CS {
+    pub fn from_circuit(mut circuit: Circuit) -> Self {
+        let mut r1cs = R1CS {
             a_matrix: Vec::new(),
             b_matrix: Vec::new(),
             c_matrix: Vec::new(),
-            witness_vector: Vec::new(),
-            witness_indices: HashMap::new(),
-        }
-    }
-
-    pub fn from_circuit(circuit: &mut Circuit) -> Self {
-        let mut r1cs = R1CS::new();
+            variable_vector: Vec::new(),
+            variable_indices: HashMap::new(),
+            circuit: circuit.clone(),
+        };
 
         let mut static_variables = vec!["1".to_string()];
         let mut linearization_variables = Vec::new();
@@ -46,7 +44,7 @@ impl R1CS {
         let mut linearization_var_indices: HashMap<String, usize> = HashMap::new();
 
         r1cs.traverse_and_index_circuit(
-            circuit,
+            &mut circuit,
             0,
             &mut static_variables,
             &mut static_var_indices,
@@ -57,7 +55,9 @@ impl R1CS {
         // Combine static and linearization vectors to create our witness vector
         r1cs.combine_variable_vectors(&mut static_variables, &mut linearization_variables);
 
-        r1cs.generate_r1cs_constraints(circuit, 0);
+        r1cs.generate_r1cs_constraints(&mut circuit, 0);
+
+        r1cs.circuit = circuit;
         r1cs
     }
 
@@ -67,11 +67,11 @@ impl R1CS {
         self.c_matrix.push(constraint.c);
     }
 
-    pub fn get_witness(&self) -> Option<&Vec<String>> {
-        if self.witness_vector.is_empty() {
+    pub fn get_variable_vector(&self) -> Option<&Vec<String>> {
+        if self.variable_vector.is_empty() {
             None
         } else {
-            Some(&self.witness_vector)
+            Some(&self.variable_vector)
         }
     }
 
@@ -125,7 +125,7 @@ impl R1CS {
     ) {
         let mut combined_vars = static_variables.clone();
         combined_vars.extend(linearization_variables.clone());
-        self.witness_vector = combined_vars.clone();
+        self.variable_vector = combined_vars.clone();
 
         let index_map: HashMap<String, usize> = combined_vars
             .into_iter()
@@ -133,9 +133,8 @@ impl R1CS {
             .map(|(index, var)| (var, index))
             .collect();
 
-        self.witness_indices = index_map
+        self.variable_indices = index_map
     }
-
     pub fn traverse_and_index_circuit(
         &mut self,
         circuit: &mut Circuit,
@@ -180,6 +179,7 @@ impl R1CS {
         }
 
         let circuit_hash = hasher.finish();
+
         if depth != 0 {
             self.add_variable_to_linearization_vector(
                 circuit_hash,
@@ -196,7 +196,7 @@ impl R1CS {
     }
 
     pub fn generate_r1cs_constraints(&mut self, circuit: &Circuit, depth: usize) {
-        let vector_degree = self.witness_vector.len();
+        let vector_degree = self.variable_vector.len();
         let circuit_hash = match circuit.hash {
             Some(hash) => hash,
             None => {
@@ -205,14 +205,14 @@ impl R1CS {
         };
 
         let circuit_index = if depth != 0 {
-            match self.witness_indices.get(&circuit_hash.to_string()) {
+            match self.variable_indices.get(&circuit_hash.to_string()) {
                 Some(&index) => index,
-                None => panic!("Cannot find index of current circuit in witness_indices"),
+                None => panic!("Cannot find index of current circuit in variable_indices"),
             }
         } else {
-            match self.witness_indices.get("out") {
+            match self.variable_indices.get("out") {
                 Some(&index) => index,
-                None => panic!("Cannot find index of 'out' in witness_indices"),
+                None => panic!("Cannot find index of 'out' in variable_indices"),
             }
         };
 
@@ -248,9 +248,9 @@ impl R1CS {
             // Number-Variable and Variable-Number Cases
             (Operand::Number(num), Operand::Variable(var))
             | (Operand::Variable(var), Operand::Number(num)) => {
-                let var_index = match self.witness_indices.get(var) {
+                let var_index = match self.variable_indices.get(var) {
                     Some(&index) => index,
-                    None => panic!("Cannot find index of variable in witness_indices"),
+                    None => panic!("Cannot find index of variable in variable_indices"),
                 };
 
                 match &circuit.operation {
@@ -268,13 +268,13 @@ impl R1CS {
 
             // Variable-Variable Case
             (Operand::Variable(var1), Operand::Variable(var2)) => {
-                let var1_index = match self.witness_indices.get(var1) {
+                let var1_index = match self.variable_indices.get(var1) {
                     Some(&index) => index,
-                    None => panic!("Cannot find index of variable in witness_indices"),
+                    None => panic!("Cannot find index of variable in variable_indices"),
                 };
-                let var2_index = match self.witness_indices.get(var2) {
+                let var2_index = match self.variable_indices.get(var2) {
                     Some(&index) => index,
-                    None => panic!("Cannot find index of variable in witness_indices"),
+                    None => panic!("Cannot find index of variable in variable_indices"),
                 };
 
                 match &circuit.operation {
@@ -306,7 +306,7 @@ impl R1CS {
                 };
 
                 let nested_circuit_index =
-                    match self.witness_indices.get(&nested_circuit_hash.to_string()) {
+                    match self.variable_indices.get(&nested_circuit_hash.to_string()) {
                         Some(&index) => index,
                         None => {
                             panic!("Expected circuit to have hashes assigned")
@@ -339,16 +339,16 @@ impl R1CS {
                 };
 
                 let nested_circuit_index =
-                    match self.witness_indices.get(&nested_circuit_hash.to_string()) {
+                    match self.variable_indices.get(&nested_circuit_hash.to_string()) {
                         Some(&index) => index,
                         None => {
                             panic!("Expected circuit to have hashes assigned")
                         }
                     };
 
-                let var_index = match self.witness_indices.get(var) {
+                let var_index = match self.variable_indices.get(var) {
                     Some(&index) => index,
-                    None => panic!("Cannot find index of variable in witness_indices"),
+                    None => panic!("Cannot find index of variable in variable_indices"),
                 };
 
                 match &circuit.operation {
@@ -383,7 +383,7 @@ impl R1CS {
                 };
 
                 let nested_circuit_index1 =
-                    match self.witness_indices.get(&nested_circuit_hash1.to_string()) {
+                    match self.variable_indices.get(&nested_circuit_hash1.to_string()) {
                         Some(&index) => index,
                         None => {
                             panic!("Expected circuit to have hashes assigned")
@@ -391,7 +391,7 @@ impl R1CS {
                     };
 
                 let nested_circuit_index2 =
-                    match self.witness_indices.get(&nested_circuit_hash2.to_string()) {
+                    match self.variable_indices.get(&nested_circuit_hash2.to_string()) {
                         Some(&index) => index,
                         None => {
                             panic!("Expected circuit to have hashes assigned")
@@ -420,6 +420,63 @@ impl R1CS {
             }
         }
         self.add_constraint(constraint);
+    }
+
+    pub fn calculate_witness(&mut self, inputs: HashMap<String, f64>) -> HashMap<String, f64> {
+        let mut witness: HashMap<String, f64> = HashMap::new();
+
+        let mut circuit = self.circuit.clone();
+
+        for (var, value) in inputs {
+            witness.insert(var, value);
+        }
+
+        let output = self.dfs_evaluate_circuit(&circuit, &mut witness, 0);
+        witness.insert("out".to_string(), output);
+
+        witness
+    }
+
+    fn dfs_evaluate_circuit(
+        &self,
+        circuit: &Circuit,
+        witness: &mut HashMap<String, f64>,
+        depth: usize,
+    ) -> f64 {
+        let mut values = [0.0, 0.0];
+
+        for (i, operand) in circuit.operands.iter().enumerate() {
+            match operand {
+                Operand::Variable(var) => match witness.get(var) {
+                    Some(&value) => values[i] = value,
+                    None => {
+                        panic!("Missing input variable {}", var);
+                    }
+                },
+                Operand::NestedCircuit(nested_circuit) => {
+                    values[i] = self.dfs_evaluate_circuit(nested_circuit, witness, depth + 1)
+                }
+                Operand::Number(num) => values[i] = *num,
+            }
+        }
+
+        let output = match circuit.operation {
+            Operation::Add => values[0] + values[1],
+            Operation::Multiply => values[0] * values[1],
+        };
+
+        if depth != 0 {
+            match circuit.hash {
+                Some(hash) => {
+                    witness.insert(hash.to_string(), output);
+                }
+                None => {
+                    println!("No hash for val1{}, val2 {}", values[0], values[1])
+                }
+            }
+        }
+
+        output
     }
 }
 
@@ -498,7 +555,7 @@ mod tests {
     #[test]
     fn test_simple_addition_circuit_r1cs() {
         let mut circuit = setup_simple_addition_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
@@ -511,7 +568,7 @@ mod tests {
     #[test]
     fn test_simple_multiplication_circuit_r1cs() {
         let mut circuit = setup_simple_multiplication_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
@@ -524,7 +581,7 @@ mod tests {
     #[test]
     fn test_variable_addition_circuit_r1cs() {
         let mut circuit = setup_variable_addition_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
@@ -537,7 +594,7 @@ mod tests {
     #[test]
     fn test_variable_multiplication_circuit_r1cs() {
         let mut circuit = setup_variable_multiplication_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
@@ -550,7 +607,7 @@ mod tests {
     #[test]
     fn test_nested_addition_circuit_r1cs() {
         let mut circuit = setup_nested_addition_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
@@ -563,7 +620,7 @@ mod tests {
     #[test]
     fn test_nested_multiplication_circuit_r1cs() {
         let mut circuit = setup_nested_multiplication_circuit();
-        let r1cs = R1CS::from_circuit(&mut circuit);
+        let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");

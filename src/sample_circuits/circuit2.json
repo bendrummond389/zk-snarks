@@ -1,0 +1,13 @@
+{
+    "operation": "Multiply",
+    "operands": [
+        {
+            "operation": "Multiply",
+            "operands": [1, 5]
+        },
+        {
+            "operation": "Multiply",
+            "operands": ["x", "x"]
+        }
+    ]
+}

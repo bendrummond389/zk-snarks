@@ -1,1 +1,4 @@
 in r1cs we convert float to int then hash. there is probably a better way to do this
+
+using additional function to calculate witness, would be faster to calculate during indexing but
+multiple witness can exist for the same circuit with different inputs

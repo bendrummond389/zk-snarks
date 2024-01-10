@@ -19,9 +19,12 @@
           "operands": [
               {
                   "operation": "Add",
-                  "operands": ["x", 3]
+                  "operands": ["y", 3]
               },
-              4
+              {
+                "operation": "Add",
+                "operands": ["x", 2.5]
+            }
           ]
       }
   ]
