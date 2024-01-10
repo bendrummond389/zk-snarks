@@ -24,8 +24,13 @@ impl QAP {
         }
     }
 
-    pub fn calculate_witness(&mut self, inputs: HashMap<String, f64>, mut r1cs: R1CS) {
-        self.witness = r1cs.calculate_witness(inputs)
+    pub fn calculate_witness(
+        &mut self,
+        inputs: HashMap<String, f64>,
+        mut r1cs: R1CS,
+    ) -> HashMap<String, f64> {
+        self.witness = r1cs.calculate_witness(inputs);
+        self.witness.clone()
     }
 
     pub fn display_polynomials(&self) {
@@ -41,24 +46,24 @@ impl QAP {
         }
     }
 
-    pub fn calculate_dot_products(&self) {
-        let a_result = calculate_dot_product_for_polynomials(
-            &self.a_polynomials,
-            &self.variable_vector,
-            &self.witness,
-        );
-
-        let b_result = calculate_dot_product_for_polynomials(
-            &self.b_polynomials,
-            &self.variable_vector,
-            &self.witness,
-        );
-
-        let c_result = calculate_dot_product_for_polynomials(
-            &self.c_polynomials,
-            &self.variable_vector,
-            &self.witness,
-        );
+    pub fn calculate_dot_products(&self) -> (Polynomial<f64>, Polynomial<f64>, Polynomial<f64>) {
+        (
+            calculate_dot_product_for_polynomials(
+                &self.a_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+            calculate_dot_product_for_polynomials(
+                &self.b_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+            calculate_dot_product_for_polynomials(
+                &self.c_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+        )
     }
 }
 

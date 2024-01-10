@@ -17,7 +17,7 @@ fn main() {
             let mut inputs = HashMap::new();
             inputs.insert("1".to_string(), 1.0);
             inputs.insert("x".to_string(), 3.0);
-            inputs.insert("y".to_string(), 1.5);
+            // inputs.insert("y".to_string(), 1.5);
 
             // Get and print the matrices
             if let Some((a_matrix, b_matrix, c_matrix)) = r1cs.get_matrices() {
@@ -40,12 +40,11 @@ fn main() {
             }
 
             let mut qap = QAP::from_r1cs(&mut r1cs);
-            qap.calculate_witness(inputs, r1cs);
+            let witness = qap.calculate_witness(inputs, r1cs);
+
+            println!("witness: {:?}", witness);
+            qap.calculate_dot_products();
             qap.display_polynomials();
-
-            let dot = qap.calculate_dot_products();
-
-            println!("a_poly{:?}", dot)
         }
         Err(e) => println!("Error: {}", e),
     }

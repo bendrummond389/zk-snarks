@@ -1,8 +1,3 @@
-#![allow(unused_imports)]
-#![allow(unused_variables)]
-#![allow(unused_mut)]
-#![allow(dead_code)]
-
 use super::Circuit;
 use super::{Operand, Operation};
 use std::collections::hash_map::DefaultHasher;
@@ -65,14 +60,6 @@ impl R1CS {
         self.a_matrix.push(constraint.a);
         self.b_matrix.push(constraint.b);
         self.c_matrix.push(constraint.c);
-    }
-
-    pub fn get_variable_vector(&self) -> Option<&Vec<String>> {
-        if self.variable_vector.is_empty() {
-            None
-        } else {
-            Some(&self.variable_vector)
-        }
     }
 
     pub fn get_matrices(&self) -> Option<(&Vec<Vec<f64>>, &Vec<Vec<f64>>, &Vec<Vec<f64>>)> {
@@ -427,13 +414,11 @@ impl R1CS {
     pub fn calculate_witness(&mut self, inputs: HashMap<String, f64>) -> HashMap<String, f64> {
         let mut witness: HashMap<String, f64> = HashMap::new();
 
-        let mut circuit = self.circuit.clone();
-
         for (var, value) in inputs {
             witness.insert(var, value);
         }
 
-        let output = self.dfs_evaluate_circuit(&circuit, &mut witness, 0);
+        let output = self.dfs_evaluate_circuit(&self.circuit, &mut witness, 0);
         witness.insert("out".to_string(), output);
 
         witness
@@ -445,20 +430,15 @@ impl R1CS {
         witness: &mut HashMap<String, f64>,
         depth: usize,
     ) -> f64 {
-        let mut values = [0.0, 0.0];
+        let mut values = [0.0; 2];
 
         for (i, operand) in circuit.operands.iter().enumerate() {
-            match operand {
-                Operand::Variable(var) => match witness.get(var) {
-                    Some(&value) => values[i] = value,
-                    None => {
-                        panic!("Missing input variable {}", var);
-                    }
-                },
+            values[i] = match operand {
+                Operand::Variable(var) => *witness.get(var).expect("Missing input variable"),
                 Operand::NestedCircuit(nested_circuit) => {
-                    values[i] = self.dfs_evaluate_circuit(nested_circuit, witness, depth + 1)
+                    self.dfs_evaluate_circuit(nested_circuit, witness, depth + 1)
                 }
-                Operand::Number(num) => values[i] = *num,
+                Operand::Number(num) => *num,
             }
         }
 
@@ -472,9 +452,7 @@ impl R1CS {
                 Some(hash) => {
                     witness.insert(hash.to_string(), output);
                 }
-                None => {
-                    println!("No hash for val1{}, val2 {}", values[0], values[1])
-                }
+                None => {}
             }
         }
 
@@ -555,8 +533,8 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_addition_circuit_r1cs() {
-        let mut circuit = setup_simple_addition_circuit();
+    fn test_from_circuit_with_simple_addition() {
+        let circuit = setup_simple_addition_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
@@ -568,8 +546,8 @@ mod tests {
     }
 
     #[test]
-    fn test_simple_multiplication_circuit_r1cs() {
-        let mut circuit = setup_simple_multiplication_circuit();
+    fn test_from_circuit_with_simple_multiplication() {
+        let circuit = setup_simple_multiplication_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
@@ -581,8 +559,8 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_addition_circuit_r1cs() {
-        let mut circuit = setup_variable_addition_circuit();
+    fn test_from_circuit_with_variable_addition() {
+        let circuit = setup_variable_addition_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
@@ -594,8 +572,8 @@ mod tests {
     }
 
     #[test]
-    fn test_variable_multiplication_circuit_r1cs() {
-        let mut circuit = setup_variable_multiplication_circuit();
+    fn test_from_circuit_with_variable_multiplication() {
+        let circuit = setup_variable_multiplication_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
@@ -607,8 +585,8 @@ mod tests {
     }
 
     #[test]
-    fn test_nested_addition_circuit_r1cs() {
-        let mut circuit = setup_nested_addition_circuit();
+    fn test_from_circuit_with_nested_addition() {
+        let circuit = setup_nested_addition_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
@@ -620,8 +598,8 @@ mod tests {
     }
 
     #[test]
-    fn test_nested_multiplication_circuit_r1cs() {
-        let mut circuit = setup_nested_multiplication_circuit();
+    fn test_from_circuit_with_nested_multiplication() {
+        let circuit = setup_nested_multiplication_circuit();
         let r1cs = R1CS::from_circuit(circuit);
 
         let (a_matrix, b_matrix, c_matrix) =
