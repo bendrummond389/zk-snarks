@@ -27,15 +27,13 @@ pub struct R1CS {
 
 impl R1CS {
     fn new() -> Self {
-        let mut r1cs = R1CS {
+        R1CS {
             a_matrix: Vec::new(),
             b_matrix: Vec::new(),
             c_matrix: Vec::new(),
             witness_vector: Vec::new(),
             witness_indices: HashMap::new(),
-        };
-
-        r1cs
+        }
     }
 
     pub fn from_circuit(circuit: &mut Circuit) -> Self {
@@ -67,6 +65,14 @@ impl R1CS {
         self.a_matrix.push(constraint.a);
         self.b_matrix.push(constraint.b);
         self.c_matrix.push(constraint.c);
+    }
+
+    pub fn get_witness(&self) -> Option<&Vec<String>> {
+        if self.witness_vector.is_empty() {
+            None
+        } else {
+            Some(&self.witness_vector)
+        }
     }
 
     pub fn get_matrices(&self) -> Option<(&Vec<Vec<i32>>, &Vec<Vec<i32>>, &Vec<Vec<i32>>)> {

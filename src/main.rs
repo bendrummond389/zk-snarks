@@ -2,6 +2,7 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 mod circuits;
+mod zk_proof;
 
 use circuits::parser::parse_circuit_from_file;
 use circuits::r1cs::R1CS;
@@ -23,7 +24,14 @@ fn main() {
                 }
                 None => println!("Empty matrices"),
             }
+            match r1cs.get_witness() {
+                Some(witness_vector) => {
+                    println!("{:?}", witness_vector);
+                }
+                None => println!("No witness")
+            }
         }
+     
         Err(e) => println!("Error: {}", e),
     }
 }
