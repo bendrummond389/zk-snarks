@@ -10,7 +10,7 @@
               },
               {
                   "operation": "Add",
-                  "operands": ["x", 2]
+                  "operands": ["x", 2.5]
               }
           ]
       },

@@ -12,15 +12,15 @@ use std::usize;
 
 #[derive(Debug)]
 struct Constraint {
-    a: Vec<i32>,
-    b: Vec<i32>,
-    c: Vec<i32>,
+    a: Vec<f64>,
+    b: Vec<f64>,
+    c: Vec<f64>,
 }
 
 pub struct R1CS {
-    a_matrix: Vec<Vec<i32>>,
-    b_matrix: Vec<Vec<i32>>,
-    c_matrix: Vec<Vec<i32>>,
+    a_matrix: Vec<Vec<f64>>,
+    b_matrix: Vec<Vec<f64>>,
+    c_matrix: Vec<Vec<f64>>,
     witness_vector: Vec<String>,
     witness_indices: HashMap<String, usize>,
 }
@@ -75,7 +75,7 @@ impl R1CS {
         }
     }
 
-    pub fn get_matrices(&self) -> Option<(&Vec<Vec<i32>>, &Vec<Vec<i32>>, &Vec<Vec<i32>>)> {
+    pub fn get_matrices(&self) -> Option<(&Vec<Vec<f64>>, &Vec<Vec<f64>>, &Vec<Vec<f64>>)> {
         if self.a_matrix.is_empty() || self.b_matrix.is_empty() || self.c_matrix.is_empty() {
             None
         } else {
@@ -172,7 +172,10 @@ impl R1CS {
                     );
                     hasher.write_u64(nested_hash);
                 }
-                Operand::Number(num) => num.hash(&mut hasher),
+                Operand::Number(num) => {
+                    let num_as_int = num.to_bits() as i64;
+                    num_as_int.hash(&mut hasher);
+                }
             }
         }
 
@@ -214,11 +217,11 @@ impl R1CS {
         };
 
         let mut constraint = Constraint {
-            b: vec![0; vector_degree],
-            c: vec![0; vector_degree],
-            a: vec![0; vector_degree],
+            b: vec![0.0; vector_degree],
+            c: vec![0.0; vector_degree],
+            a: vec![0.0; vector_degree],
         };
-        constraint.c[circuit_index] = 1;
+        constraint.c[circuit_index] = 1.0;
 
         if circuit.operands.len() != 2 {
             panic!("Expected two operands for binary operation");
@@ -232,13 +235,13 @@ impl R1CS {
             (Operand::Number(num1), Operand::Number(num2)) => match &circuit.operation {
                 Operation::Add => {
                     constraint.a[0] = num1 + num2;
-                    constraint.b[0] = 1;
-                    constraint.c[circuit_index] = 1;
+                    constraint.b[0] = 1.0;
+                    constraint.c[circuit_index] = 1.0;
                 }
                 Operation::Multiply => {
                     constraint.a[0] = *num1;
                     constraint.b[0] = *num2;
-                    constraint.c[circuit_index] = 1;
+                    constraint.c[circuit_index] = 1.0;
                 }
             },
 
@@ -253,12 +256,12 @@ impl R1CS {
                 match &circuit.operation {
                     Operation::Add => {
                         constraint.a[0] = *num;
-                        constraint.a[var_index] = 1;
-                        constraint.b[0] = 1;
+                        constraint.a[var_index] = 1.0;
+                        constraint.b[0] = 1.0;
                     }
                     Operation::Multiply => {
                         constraint.a[0] = *num;
-                        constraint.b[var_index] = 1;
+                        constraint.b[var_index] = 1.0;
                     }
                 }
             }
@@ -277,17 +280,17 @@ impl R1CS {
                 match &circuit.operation {
                     Operation::Add => {
                         if var1 == var2 {
-                            constraint.a[var1_index] = 2;
-                            constraint.b[0] = 1;
+                            constraint.a[var1_index] = 2.0;
+                            constraint.b[0] = 1.0;
                         } else {
-                            constraint.a[var1_index] = 1;
-                            constraint.a[var2_index] = 1;
-                            constraint.b[0] = 1;
+                            constraint.a[var1_index] = 1.0;
+                            constraint.a[var2_index] = 1.0;
+                            constraint.b[0] = 1.0;
                         }
                     }
                     Operation::Multiply => {
-                        constraint.a[var1_index] = 1;
-                        constraint.b[var2_index] = 1;
+                        constraint.a[var1_index] = 1.0;
+                        constraint.b[var2_index] = 1.0;
                     }
                 }
             }
@@ -313,12 +316,12 @@ impl R1CS {
                 match &circuit.operation {
                     Operation::Add => {
                         constraint.a[0] = *num;
-                        constraint.a[nested_circuit_index] = 1;
-                        constraint.b[0] = 1;
+                        constraint.a[nested_circuit_index] = 1.0;
+                        constraint.b[0] = 1.0;
                     }
                     Operation::Multiply => {
                         constraint.a[0] = *num;
-                        constraint.b[nested_circuit_index] = 1;
+                        constraint.b[nested_circuit_index] = 1.0;
                     }
                 }
 
@@ -350,13 +353,13 @@ impl R1CS {
 
                 match &circuit.operation {
                     Operation::Add => {
-                        constraint.a[nested_circuit_index] = 1;
-                        constraint.a[var_index] = 1;
-                        constraint.b[0] = 1
+                        constraint.a[nested_circuit_index] = 1.0;
+                        constraint.a[var_index] = 1.0;
+                        constraint.b[0] = 1.0;
                     }
                     Operation::Multiply => {
-                        constraint.a[nested_circuit_index] = 1;
-                        constraint.b[var_index] = 1;
+                        constraint.a[nested_circuit_index] = 1.0;
+                        constraint.b[var_index] = 1.0;
                     }
                 }
 
@@ -398,17 +401,17 @@ impl R1CS {
                 match &circuit.operation {
                     Operation::Add => {
                         if nested_circuit_hash1 == nested_circuit_hash2 {
-                            constraint.a[nested_circuit_index1] = 2;
-                            constraint.b[0] = 1
+                            constraint.a[nested_circuit_index1] = 2.0;
+                            constraint.b[0] = 1.0
                         } else {
-                            constraint.a[nested_circuit_index1] = 1;
-                            constraint.a[nested_circuit_index2] = 1;
-                            constraint.b[0] = 1;
+                            constraint.a[nested_circuit_index1] = 1.0;
+                            constraint.a[nested_circuit_index2] = 1.0;
+                            constraint.b[0] = 1.0;
                         }
                     }
                     Operation::Multiply => {
-                        constraint.a[nested_circuit_index1] = 1;
-                        constraint.b[nested_circuit_index2] = 1;
+                        constraint.a[nested_circuit_index1] = 1.0;
+                        constraint.b[nested_circuit_index2] = 1.0;
                     }
                 }
 
@@ -427,7 +430,7 @@ mod tests {
     fn setup_simple_addition_circuit() -> Circuit {
         Circuit {
             operation: Operation::Add,
-            operands: vec![Operand::Number(1), Operand::Number(2)],
+            operands: vec![Operand::Number(1.0), Operand::Number(2.0)],
             hash: None,
         }
     }
@@ -435,7 +438,7 @@ mod tests {
     fn setup_simple_multiplication_circuit() -> Circuit {
         Circuit {
             operation: Operation::Multiply,
-            operands: vec![Operand::Number(3), Operand::Number(4)],
+            operands: vec![Operand::Number(3.0), Operand::Number(4.0)],
             hash: None,
         }
     }
@@ -468,10 +471,10 @@ mod tests {
             operands: vec![
                 Operand::NestedCircuit(Box::new(Circuit {
                     operation: Operation::Add,
-                    operands: vec![Operand::Number(1), Operand::Number(2)],
+                    operands: vec![Operand::Number(1.0), Operand::Number(2.0)],
                     hash: None,
                 })),
-                Operand::Number(5),
+                Operand::Number(5.0),
             ],
             hash: None,
         }
@@ -483,10 +486,10 @@ mod tests {
             operands: vec![
                 Operand::NestedCircuit(Box::new(Circuit {
                     operation: Operation::Multiply,
-                    operands: vec![Operand::Number(1), Operand::Number(2)],
+                    operands: vec![Operand::Number(1.0), Operand::Number(2.0)],
                     hash: None,
                 })),
-                Operand::Number(5),
+                Operand::Number(5.0),
             ],
             hash: None,
         }
@@ -500,9 +503,9 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![3, 0]]);
-        assert_eq!(b_matrix, &vec![vec![1, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 1]]);
+        assert_eq!(a_matrix, &vec![vec![3.0, 0.0]]);
+        assert_eq!(b_matrix, &vec![vec![1.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 1.0]]);
     }
 
     #[test]
@@ -513,9 +516,9 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![3, 0]]);
-        assert_eq!(b_matrix, &vec![vec![4, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 1]]);
+        assert_eq!(a_matrix, &vec![vec![3.0, 0.0]]);
+        assert_eq!(b_matrix, &vec![vec![4.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 1.0]]);
     }
 
     #[test]
@@ -526,9 +529,9 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![0, 1, 1, 0]]);
-        assert_eq!(b_matrix, &vec![vec![1, 0, 0, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 0, 0, 1]]);
+        assert_eq!(a_matrix, &vec![vec![0.0, 1.0, 1.0, 0.0]]);
+        assert_eq!(b_matrix, &vec![vec![1.0, 0.0, 0.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 0.0, 0.0, 1.0]]);
     }
 
     #[test]
@@ -539,9 +542,9 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![0, 1, 0, 0]]);
-        assert_eq!(b_matrix, &vec![vec![0, 0, 1, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 0, 0, 1]]);
+        assert_eq!(a_matrix, &vec![vec![0.0, 1.0, 0.0, 0.0]]);
+        assert_eq!(b_matrix, &vec![vec![0.0, 0.0, 1.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 0.0, 0.0, 1.0]]);
     }
 
     #[test]
@@ -552,9 +555,9 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![3, 0, 0], vec![5, 0, 1]]);
-        assert_eq!(b_matrix, &vec![vec![1, 0, 0], vec![1, 0, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 0, 1], vec![0, 1, 0]]);
+        assert_eq!(a_matrix, &vec![vec![3.0, 0.0, 0.0], vec![5.0, 0.0, 1.0]]);
+        assert_eq!(b_matrix, &vec![vec![1.0, 0.0, 0.0], vec![1.0, 0.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 0.0, 1.0], vec![0.0, 1.0, 0.0]]);
     }
 
     #[test]
@@ -565,8 +568,8 @@ mod tests {
         let (a_matrix, b_matrix, c_matrix) =
             r1cs.get_matrices().expect("Matrices should not be empty");
 
-        assert_eq!(a_matrix, &vec![vec![1, 0, 0], vec![5, 0, 1]]);
-        assert_eq!(b_matrix, &vec![vec![2, 0, 0], vec![1, 0, 0]]);
-        assert_eq!(c_matrix, &vec![vec![0, 0, 1], vec![0, 1, 0]]);
+        assert_eq!(a_matrix, &vec![vec![1.0, 0.0, 0.0], vec![5.0, 0.0, 1.0]]);
+        assert_eq!(b_matrix, &vec![vec![2.0, 0.0, 0.0], vec![1.0, 0.0, 0.0]]);
+        assert_eq!(c_matrix, &vec![vec![0.0, 0.0, 1.0], vec![0.0, 1.0, 0.0]]);
     }
 }

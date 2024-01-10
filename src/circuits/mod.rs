@@ -20,7 +20,7 @@ pub struct Circuit {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum Operand {
-    Number(i32),
+    Number(f64),
     Variable(String),
     NestedCircuit(Box<Circuit>),
 }

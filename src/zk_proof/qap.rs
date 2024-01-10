@@ -15,47 +15,44 @@ impl QAP {
             None => panic!("R1CS matrices are empty"),
         };
 
-        let mut a_polynomials: Vec<Polynomial<f64>> = Vec::new();
-        let num_columns = a_matrix[0].len();
-
-        for col in 0..num_columns {
-            let mut xs = Vec::new();
-            let mut ys = Vec::new();
-
-            for (row_index, row) in a_matrix.iter().enumerate() {
-                let val = *row.get(col).unwrap_or(&0) as f64;
-                xs.push(row_index as f64 + 1.0);
-                ys.push(val);
-            }
-
-            if ys.iter().all(|&val| val == 0.0) {
-                a_polynomials.push(Polynomial::new(vec![0.0]));
-                continue;
-            }
-
-            if let Some(poly) = Polynomial::lagrange(&xs, &ys) {
-                a_polynomials.push(poly);
-            } else {
-                panic!("Failed to create Lagrange polynomial for column {}", col);
-            }
-        }
-
-        let mut a_values_at_1: Vec<f64> = Vec::new();
-        for poly in &a_polynomials {
-            let value_at_1 = poly.eval(4.0);
-            let rounded_value_at_1 = (value_at_1 * 100.0).round() / 100.0;
-            a_values_at_1.push(rounded_value_at_1);
-        }
-
-        println!("{:?}", a_matrix[3]);
-
-        println!("A evaluated at x = 4: {:?}", a_values_at_1);
+        let a_polynomials = generate_polynomials_from_matrix(&a_matrix);
+        let b_polynomials = generate_polynomials_from_matrix(&b_matrix);
+        let c_polynomials = generate_polynomials_from_matrix(&c_matrix);
 
         QAP {
             a_polynomials,
-            b_polynomials: Vec::new(), // TODO: populate this similarly
-            c_polynomials: Vec::new(), // TODO: populate this similarly
-            input_polynomial: Polynomial::new(vec![1.0]), // Adjusted for f64
+            b_polynomials,
+            c_polynomials,
+            input_polynomial: Polynomial::new(vec![1.0]),
         }
     }
+}
+
+fn generate_polynomials_from_matrix(matrix: &Vec<Vec<f64>>) -> Vec<Polynomial<f64>> {
+    let mut polynomials: Vec<Polynomial<f64>> = Vec::new();
+    let num_columns = matrix[0].len();
+
+    for col in 0..num_columns {
+        let mut xs = Vec::new();
+        let mut ys = Vec::new();
+
+        for (row_index, row) in matrix.iter().enumerate() {
+            let val = *row.get(col).unwrap_or(&0.0);
+            xs.push(row_index as f64 + 1.0);
+            ys.push(val);
+        }
+
+        if ys.iter().all(|&val| val == 0.0) {
+            polynomials.push(Polynomial::new(vec![0.0]));
+            continue;
+        }
+
+        if let Some(poly) = Polynomial::lagrange(&xs, &ys) {
+            polynomials.push(poly);
+        } else {
+            panic!("Failed to create Lagrange polynomial for column {}", col);
+        }
+    }
+
+    polynomials
 }
