@@ -1,8 +1,10 @@
 mod circuits;
+mod ecc;
 mod zk_proof;
 
 use circuits::parser::parse_circuit_from_file;
 use circuits::r1cs::R1CS;
+use ecc::finite_field::{generate_keys, point_operations};
 use std::collections::HashMap;
 use std::env;
 use zk_proof::qap::QAP;
@@ -10,6 +12,9 @@ use zk_proof::qap::QAP;
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
     let file_path = "./src/sample_circuits/circuit2.json";
+
+    generate_keys();
+    point_operations();
 
     match parse_circuit_from_file(file_path) {
         Ok(circuit) => {
@@ -42,9 +47,9 @@ fn main() {
             let mut qap = QAP::from_r1cs(&mut r1cs);
             let witness = qap.calculate_witness(inputs, r1cs);
 
-            println!("witness: {:?}", witness);
-            qap.calculate_dot_products();
-            qap.display_polynomials();
+            // println!("witness: {:?}", witness);
+            // qap.calculate_dot_products();
+            // qap.display_polynomials();
         }
         Err(e) => println!("Error: {}", e),
     }
