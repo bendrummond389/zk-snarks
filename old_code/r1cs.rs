@@ -225,12 +225,10 @@ impl R1CS {
                 Operation::Add => {
                     constraint.a[0] = num1 + num2;
                     constraint.b[0] = 1.0;
-                    constraint.c[circuit_index] = 1.0;
                 }
                 Operation::Multiply => {
                     constraint.a[0] = *num1;
                     constraint.b[0] = *num2;
-                    constraint.c[circuit_index] = 1.0;
                 }
             },
 
