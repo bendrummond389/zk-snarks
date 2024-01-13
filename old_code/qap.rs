@@ -1,48 +1,36 @@
-use crate::{circuits::IndexedMap, r1cs::r1cs::R1CS};
+use crate::circuits::r1cs::R1CS;
 use polynomial::Polynomial;
-use std::{collections::HashMap, env::var};
+use std::collections::HashMap;
 
 pub struct QAP {
     a_polynomials: Vec<Polynomial<f64>>,
     b_polynomials: Vec<Polynomial<f64>>,
     c_polynomials: Vec<Polynomial<f64>>,
     witness: HashMap<String, f64>,
-    variable_map: IndexedMap<String>,
+    variable_vector: Vec<String>,
 }
 
 impl QAP {
-    pub fn from_r1cs(r1cs: R1CS, witness: HashMap<String, f64>) -> Self {
-        let (a_matrix, b_matrix, c_matrix) = r1cs.get_constraint_matrices();
-        let variable_map = r1cs.get_variable_map();
+    pub fn from_r1cs(r1cs: &mut R1CS) -> Self {
+        let (a_matrix, b_matrix, c_matrix) = r1cs.get_matrices().expect("R1CS matrices are empty");
+        let variable_vector = r1cs.variable_vector.clone();
 
         QAP {
-            a_polynomials: generate_polynomials_from_matrix(a_matrix),
-            b_polynomials: generate_polynomials_from_matrix(b_matrix),
-            c_polynomials: generate_polynomials_from_matrix(c_matrix),
-            witness,
-            variable_map: variable_map.clone(),
+            a_polynomials: generate_polynomials_from_matrix(&a_matrix),
+            b_polynomials: generate_polynomials_from_matrix(&b_matrix),
+            c_polynomials: generate_polynomials_from_matrix(&c_matrix),
+            witness: HashMap::new(),
+            variable_vector,
         }
     }
 
-    pub fn calculate_dot_products(&self) -> (Polynomial<f64>, Polynomial<f64>, Polynomial<f64>) {
-        let variable_vector = self.variable_map.clone().into_vector();
-        (
-            calculate_dot_product_for_polynomials(
-                &self.a_polynomials,
-                &variable_vector,
-                &self.witness,
-            ),
-            calculate_dot_product_for_polynomials(
-                &self.b_polynomials,
-                &variable_vector,
-                &self.witness,
-            ),
-            calculate_dot_product_for_polynomials(
-                &self.c_polynomials,
-                &variable_vector,
-                &self.witness,
-            ),
-        )
+    pub fn calculate_witness(
+        &mut self,
+        inputs: HashMap<String, f64>,
+        mut r1cs: R1CS,
+    ) -> HashMap<String, f64> {
+        self.witness = r1cs.calculate_witness(inputs);
+        self.witness.clone()
     }
 
     pub fn display_polynomials(&self) {
@@ -56,6 +44,26 @@ impl QAP {
         for poly in polynomials {
             println!("{:?}", poly);
         }
+    }
+
+    pub fn calculate_dot_products(&self) -> (Polynomial<f64>, Polynomial<f64>, Polynomial<f64>) {
+        (
+            calculate_dot_product_for_polynomials(
+                &self.a_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+            calculate_dot_product_for_polynomials(
+                &self.b_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+            calculate_dot_product_for_polynomials(
+                &self.c_polynomials,
+                &self.variable_vector,
+                &self.witness,
+            ),
+        )
     }
 }
 
@@ -75,7 +83,6 @@ fn calculate_dot_product_for_polynomials(
         let coefficient = *witness
             .get(&variable_vector[i])
             .expect("Variable value missing in witness");
-
         for (j, &poly_coeff) in polynomial.data().iter().enumerate() {
             if j < result_coeffs.len() {
                 result_coeffs[j] += poly_coeff * coefficient;
