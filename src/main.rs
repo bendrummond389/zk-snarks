@@ -1,37 +1,27 @@
-#[allow(dead_code)]
 mod circuits;
-mod ecc;
 mod r1cs;
 mod utils;
-use elliptic_curve::Field;
-use k256::Scalar;
+mod zk_proofs;
 
 use circuits::Circuit;
-use ecc::finite_field::point_operations;
 use r1cs::r1cs::R1CS;
 use std::{collections::HashMap, env};
 use utils::polynomial::polynomial::Polynomial;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
+    let file_path = "./circuits/sample_circuits/circuit1.json";
 
-    // let points = vec![
-    //     (Scalar::from(1 as u32), Scalar::from(2 as u32)),
-    //     (Scalar::from(3 as u32), Scalar::from(4 as u32)),
-    //     (Scalar::from(5 as u32), Scalar::from(6 as u32)),
-    // ];
+    let mut inputs = HashMap::new();
+    inputs.insert("1".to_string(), 1);
+    inputs.insert("x".to_string(), 3);
 
-    // // Interpolate and print the result
-    // let interpolated_poly = Polynomial::interpolate(&points);
+    let mut circuit = Circuit::from_file(file_path).expect("Failed to load circuit");
+    let variable_map = circuit.hash_and_index_circuit();
 
+    let mut r1cs = R1CS::new(variable_map);
+    r1cs.generate_r1cs_constraints(&circuit, true);
+    let witness = r1cs.compute_witness(&circuit, inputs);
 
-    let a = Scalar::from(70000 as u32);
-
-    let bytes = a.to_bytes();
-
-    println!("{:?}", bytes);
-
-    
-
-
+    println!("{:?}", witness);
 }
