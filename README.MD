@@ -19,7 +19,7 @@ The project is organized into several modules, each with a specific focus:
 - `utils`: Common utilities used across the project.
   - `polynomial.rs`: Defines polynomial operations essential in zk-SNARK constructions.
 - `zk_proofs`: Contains the implementation for generating zk-SNARK proofs.
-  - `qap.rs`: Quantum Arithmetic Program (QAP) related implementations.
+  - `qap.rs`: Quadratic Arithmetic Program (QAP) related implementations.
 
 ## Getting Started
 
