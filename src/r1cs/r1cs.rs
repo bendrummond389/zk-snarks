@@ -9,6 +9,7 @@ struct Constraint {
     c: Vec<i64>,
 }
 
+#[derive(Debug)]
 pub struct R1CS {
     a_matrix: Vec<Vec<i64>>,
     b_matrix: Vec<Vec<i64>>,
